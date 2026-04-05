@@ -36,3 +36,5 @@ state = {
     # validator load
     "validator_loads": {}
 }
+
+state["running"] = False

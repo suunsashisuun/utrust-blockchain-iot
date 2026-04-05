@@ -2,6 +2,8 @@ let trustChart;
 let fairnessChart;
 let loadChart;
 let comparisonChart;
+let sensorChart;
+
 
 let comparisonData = [];
 
@@ -25,6 +27,13 @@ async function fetchState() {
     try {
         const res = await fetch('/state');
         const data = await res.json();
+        const statusBox = document.getElementById("systemStatus");
+
+        if (data.running) {
+            statusBox.innerHTML = "🟢 RUNNING";
+        } else {
+            statusBox.innerHTML = "🔴 STOPPED";
+        }
 
         const trustScores = data.trust_scores || {};
         const fairnessHistory = data.fairness_history || [];
@@ -60,6 +69,26 @@ async function fetchState() {
                 box.style.animation = "none";
             }
         }
+        const banner = document.getElementById("alertBanner");
+
+        if (data.last_processed_event) {
+            const e = data.last_processed_event;
+
+            if (e.urgency === "CRITICAL" && !banner.classList.contains("active")) {
+                banner.classList.add("active");
+                banner.style.display = "block";
+
+                banner.innerHTML = `
+                    🚨 CRITICAL EVENT — Device ${e.device_id} | Gas ${e.gas.toFixed(2)}
+                `;
+
+                setTimeout(() => {
+                    banner.style.display = "none";
+                    banner.classList.remove("active");
+                }, 2000);
+            }
+        }
+
 
         // PERFORMANCE
         document.getElementById("latency").innerText = (data.latency || 0).toFixed(4);
@@ -69,12 +98,12 @@ async function fetchState() {
         let displayVal = fairnessVal.toFixed(4);
 
         let color = "red";
-        if (fairnessVal > 0.6) color = "orange";
-        if (fairnessVal > 0.8) color = "green";
+        if (fairnessVal > 0.4) color = "orange";
+        if (fairnessVal > 0.6) color = "green";
 
         let badge = "";
-        if (fairnessVal > 0.8) badge = "🟢 Excellent";
-        else if (fairnessVal > 0.6) badge = "🟡 Good";
+        if (fairnessVal > 0.6) badge = "🟢 Excellent";
+        else if (fairnessVal > 0.4) badge = "🟡 Good";
         else badge = "🔴 Poor";
 
         document.getElementById("fairness").innerHTML =
@@ -172,6 +201,75 @@ async function fetchState() {
             loadChart.update('active');
         }
 
+
+        const events = data.last_events || [];
+
+        const sensorLabels = events.map(e => `D${e.device_id}`);
+        const gasValues = events.map(e => e.gas);
+
+        const sensorColors = events.map(e => {
+            if (e.urgency === "CRITICAL") return "#ef4444";
+            if (e.urgency === "WARNING") return "#f59e0b";
+            return "#3b82f6";
+        });
+
+
+
+        if (!sensorChart) {
+            const ctx = document.getElementById("sensorChart").getContext("2d");
+
+            sensorChart = new Chart(ctx, {
+                type: "bar",
+                data: {
+                    labels: sensorLabels,
+                    datasets: [
+                        {
+                            label: "Normal",
+                            data: gasValues.map((v, i) => events[i].urgency === "NORMAL" ? v : null),
+                            backgroundColor: "#3b82f6"
+                        },
+                        {
+                            label: "Warning",
+                            data: gasValues.map((v, i) => events[i].urgency === "WARNING" ? v : null),
+                            backgroundColor: "#f59e0b"
+                        },
+                        {
+                            label: "Critical",
+                            data: gasValues.map((v, i) => events[i].urgency === "CRITICAL" ? v : null),
+                            backgroundColor: "#ef4444"
+                        }
+                    ]
+
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: 10000   // 👈 FIXED RANGE
+                        }
+                    }
+                }
+ 
+
+            });
+        } else {
+            sensorChart.data.labels = sensorLabels;
+            sensorChart.data.datasets[0].data =
+                gasValues.map((v, i) => events[i].urgency === "NORMAL" ? v : null);
+
+            sensorChart.data.datasets[1].data =
+                gasValues.map((v, i) => events[i].urgency === "WARNING" ? v : null);
+
+            sensorChart.data.datasets[2].data =
+                gasValues.map((v, i) => events[i].urgency === "CRITICAL" ? v : null);
+
+            sensorChart.update();
+        }
+
+
+
         // PIPELINE STATUS
         document.getElementById("pipelineStatus").innerHTML = `
         <span style="color:#60a5fa;">Domain (${data.domain_size})</span>
@@ -205,7 +303,6 @@ async function loadComparison() {
     }
 }
 
-
 // -----------------------------
 // UPDATE COMPARISON (TOGGLE)
 // -----------------------------
@@ -216,17 +313,46 @@ function updateComparison(metric) {
     const labels = comparisonData.map(d => d.strategy);
     const values = comparisonData.map(d => d[metric]);
 
-    let bestIndex;
+    if (!values.length) return;
+
+    let bestIndex, worstIndex;
 
     if (metric === "latency") {
         bestIndex = values.indexOf(Math.min(...values));
+        worstIndex = values.indexOf(Math.max(...values));
     } else {
         bestIndex = values.indexOf(Math.max(...values));
+        worstIndex = values.indexOf(Math.min(...values));
     }
 
-    const colors = labels.map((_, i) =>
-        i === bestIndex ? "#22c55e" : "#6b7280"
-    );
+    const best = labels[bestIndex];
+    const worst = labels[worstIndex];
+
+    // COLOR LOGIC (clean + meaningful)
+    const colors = labels.map((_, i) => {
+        if (i === bestIndex) return "#22c55e";   // best → green
+        if (i === worstIndex) return "#ef4444";  // worst → red
+        return "#9ca3af";                        // neutral
+    });
+
+    // INSIGHT TEXT
+    const insightBox = document.getElementById("comparisonInsight");
+
+    let message = "";
+
+    if (metric === "latency") {
+        message = `⚡ ${best} minimizes delay, ${worst} is slowest`;
+    }
+    else if (metric === "throughput") {
+        message = `🚀 ${best} handles highest load, ${worst} is weakest`;
+    }
+    else {
+        message = `⚖️ ${best} is most fair, ${worst} is most biased and U Trust has a balanced trade off `;
+    }
+
+    if (insightBox) {
+        insightBox.innerHTML = message;
+    }
 
     const ctx = document.getElementById("comparisonChart").getContext("2d");
 
@@ -236,7 +362,7 @@ function updateComparison(metric) {
             data: {
                 labels: labels,
                 datasets: [{
-                    label: metric.toUpperCase() + " (Best Highlighted)",
+                    label: metric.toUpperCase() + " (Best & Worst Highlighted)",
                     data: values,
                     backgroundColor: colors
                 }]
@@ -253,7 +379,8 @@ function updateComparison(metric) {
     } else {
         comparisonChart.data.labels = labels;
         comparisonChart.data.datasets[0].data = values;
-        comparisonChart.data.datasets[0].label = metric.toUpperCase() + " (Best Highlighted)";
+        comparisonChart.data.datasets[0].label =
+            metric.toUpperCase() + " (Best & Worst Highlighted)";
         comparisonChart.data.datasets[0].backgroundColor = colors;
         comparisonChart.update('active');
     }

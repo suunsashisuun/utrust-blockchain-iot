@@ -89,6 +89,7 @@ def start():
         return "Already running"
 
     running = True
+    state["running"] = True
 
     simulation_thread = threading.Thread(target=run_sim)
     simulation_thread.daemon = True
@@ -102,7 +103,8 @@ def start():
 def stop():
     global running
     running = False
-    
+    state["running"] = False
+
     print("STOP CALLED")   # 🔥 ADD THIS
 
     return "Stopped"

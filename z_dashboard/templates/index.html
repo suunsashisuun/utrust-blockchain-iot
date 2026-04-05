@@ -74,9 +74,39 @@ button:hover {
 }
 
 /* GRID */
+
 .container {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
+    align-items: start;
+}
+
+
+.row-2-container {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 20px;
+    align-items: stretch;
+}
+
+.queue-card {
+    min-width: 230px;
+    max-width: 320px;
+}
+
+.full-row {
+    grid-column: 1 / -1;
+}
+.row-3 {
+    grid-column: span 1;
+}
+
+.row-3-container {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
     gap: 20px;
 }
 
@@ -92,6 +122,16 @@ button:hover {
     box-shadow: 0 6px 20px rgba(0,0,0,0.08);
 
     transition: transform 0.2s ease;
+    display: flex;
+    flex-direction: column;
+
+}
+
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.5); }
+    70% { box-shadow: 0 0 0 10px rgba(239,68,68,0); }
+    100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
 }
 
 .card:hover {
@@ -111,10 +151,16 @@ h2 {
 }
 
 /* CANVAS */
+
 canvas {
     width: 100% !important;
-    height: 260px !important;
+    height: 320px !important;
 }
+#sensorChart,
+#comparisonChart {
+    height: 350px !important;
+}
+
 
 /* SMALL TEXT */
 small {
@@ -134,6 +180,19 @@ small {
     <button onclick="startSim()">Start</button>
     <button onclick="stopSim()">Stop</button>
 </div>
+<div id="systemStatus" style="margin-bottom:8px; font-weight:bold;">
+    🔴 STOPPED
+</div>
+
+<div id="alertBanner" style="
+    display:none;
+    margin-bottom:12px;
+    padding:8px;
+    border-radius:8px;
+    background:#fee2e2;
+    color:#991b1b;
+    font-weight:500;
+"></div>
 
 <!-- KPI STRIP -->
 <div class="kpi-container">
@@ -157,53 +216,76 @@ small {
 
 <div class="container">
 
-    <div class="card">
+    <div class="card full-row">
         <h2>Pipeline Flow</h2>
         <div id="pipelineStatus" class="pipeline"></div>
     </div>
 
-    <div class="card">
-        <h2>Queues</h2>
+    <div class="row-2-container">
 
-        <h4>📥 Current</h4>
-        <p>Urgent: <span id="urgent"></span></p>
-        <p>Normal: <span id="normal"></span></p>
-
-        <h4>📤 Processed</h4>
-        <p>Urgent: <span id="processedUrgent"></span></p>
-        <p>Normal: <span id="processedNormal"></span></p>
-
-        <h4>⚡ Last Processed</h4>
-        <div id="lastEventBox" style="padding:8px; border-radius:8px; background:#f3f4f6;"></div>
-    </div>
-
-
-    <div class="card">
-        <h2>Trust Distribution</h2>
-        <canvas id="trustChart"></canvas>
-    </div>
-
-    <div class="card">
-        <h2>Fairness Trend</h2>
-        <canvas id="fairnessChart"></canvas>
-    </div>
-
-    <div class="card">
-        <h2>Validator Load</h2>
-        <canvas id="loadChart"></canvas>
-    </div>
-
-    <div class="card">
-        <h2>Strategy Comparison</h2>
-
-        <div style="margin-bottom:10px;">
-            <button onclick="updateComparison('latency')">Latency</button>
-            <button onclick="updateComparison('throughput')">Throughput</button>
-            <button onclick="updateComparison('fairness')">Fairness</button>
+        <div class="card">
+            <h2>Sensor Activity</h2>
+            <canvas id="sensorChart"></canvas>
         </div>
 
-        <canvas id="comparisonChart"></canvas>
+        <div class="card queue-card">
+            <h2>Queues</h2>
+
+            <h4>📥 Current</h4>
+            <p>Urgent: <span id="urgent"></span></p>
+            <p>Normal: <span id="normal"></span></p>
+
+            <h4>📤 Processed</h4>
+            <p>Urgent: <span id="processedUrgent"></span></p>
+            <p>Normal: <span id="processedNormal"></span></p>
+
+            <h4>⚡ Last Processed</h4>
+            <div id="lastEventBox" style="padding:8px; border-radius:8px; background:#f3f4f6;"></div>
+        </div>
+
+        <div class="card">
+            <h2>Strategy Comparison</h2>
+
+            <div style="margin-bottom:10px;">
+                <button onclick="updateComparison('latency')">Latency</button>
+                <button onclick="updateComparison('throughput')">Throughput</button>
+                <button onclick="updateComparison('fairness')">Fairness</button>
+            </div>
+
+            <canvas id="comparisonChart"></canvas>
+
+            <div id="comparisonInsight" style="
+                margin-top:10px;
+                font-size:13px;
+                padding:8px;
+                border-radius:8px;
+                background:#f3f4f6;
+            "></div>
+        </div>
+
     </div>
+
+
+    <div class="row-3-container">
+           
+        <div class="card">
+            <h2>Trust Distribution</h2>
+            <canvas id="trustChart"></canvas>
+        </div>
+        <div class="card">
+            <h2>Fairness Trend</h2>
+            <canvas id="fairnessChart"></canvas>
+        </div>
+
+        <div class="card">
+            <h2>Validator Load</h2>
+            <canvas id="loadChart"></canvas>
+        </div>
+
+        
+    </div>
+
+   
 
 </div>
 
