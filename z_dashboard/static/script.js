@@ -343,7 +343,7 @@ async function loadComparison() {
         const insightBox = document.getElementById("comparisonInsight");
 
         if (insightBox && insight) {
-            insightBox.innerHTML += `
+            insightBox.innerHTML = `
                 <br><br>
                 📊 Fairness Gain: ${insight.fairness_gain.toFixed(3)}  
                 <br>
@@ -472,3 +472,13 @@ function startSim() {
 function stopSim() {
     fetch('/stop');
 }
+
+
+
+function resetSim() {
+    fetch('/reset')
+        .then(() => {
+            location.reload();   // 🔥 ensures clean UI reset
+        });
+}
+

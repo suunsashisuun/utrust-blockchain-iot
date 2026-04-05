@@ -135,7 +135,9 @@ class GWOSelector:
         # 🔥 SOFTMAX SELECTION (KEY FIX)
         T = 0.5  # temperature
 
-        exp_weights = [math.exp(w / T) for w in weights]
+        #last fix 
+        max_w=max(weights)
+        exp_weights = [math.exp((w-max_w) / T) for w in weights]
 
         selected = random.choices(
             candidates,

@@ -39,7 +39,7 @@ class TrustManager:
         # ---------------------------
         # CONSISTENCY (stability)
         # ---------------------------
-        consistency = 1 - abs(validator.current_load - 5) / 10
+        consistency = max(0, 1 - abs(validator.current_load - 5) / 10)
 
         # ---------------------------
         # BASE TRUST
@@ -86,5 +86,7 @@ class TrustManager:
 
             new_trust = self.compute_trust(validator)
 
-            self.trust_scores[validator.validator_id] = new_trust
+            old = self.trust_scores[validator.validator_id]
+            smoothed = 0.7 * old + 0.3 * new_trust
+            self.trust_scores[validator.validator_id] = smoothed
 

@@ -45,6 +45,51 @@ state = {
     "consensus_info": {},
 
 }
+def get_initial_state():
+    return {
+        "last_events": [],
+        "processed_urgent": 0,
+        "processed_normal": 0,
+        "last_processed_event": None,
+
+
+        "urgent_queue_size": 0,
+        "normal_queue_size": 0,
+
+
+        "domain_size": 0,
+        "selected_validator": "N/A",
+        "consensus_result": False,
+
+
+        "trust_scores": {},
+
+
+        "blocks": 0,
+
+
+        "latency": 0.0,
+        "throughput": 0.0,
+        "fairness": 0.0,
+
+
+        "fairness_history": [0.0],
+        "latency_history": [0.0],
+
+
+        "validator_loads": {},
+
+
+        "event_trace": [],
+
+
+        "last_classification": {},
+        "validator_decision": {},
+        "consensus_info": {},
+
+
+        "running": False
+    }
 
 state["running"] = False
 

@@ -6,7 +6,7 @@ import time
 
 from z_dashboard.state import state
 from z_dashboard.state import DEBUG
-
+from z_dashboard.state import get_initial_state
 
 
 import sys
@@ -18,42 +18,59 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from g_simulation.simpy_engine import run_simulation
 from e_consensus.scheduler import scheduler_with_selector
 from e_consensus.gwo_selector import GWOSelector
+# metrics
+from h_metrics.metrics import reset_metrics
+
 
 app = Flask(__name__)
 
 simulation_thread = None
 running = False
 
+env = None
+blockchain = None
+validator_network = None
 
 # ---------------------------
 # SIMULATION LOOP
 # ---------------------------
-    
+
+
 def run_sim():
-    global running
+    global running, env
 
-    env = simpy.Environment()
 
-    blockchain, validator_network = run_simulation(
-        env,
-        scheduler_with_selector,
-        GWOSelector,
-        num_validators=50,
-        use_ml=True
-    )
+    # 🔥 create simulation ONLY ONCE
+    if env is None:
+        env = simpy.Environment()
 
-    # 🔥 CRITICAL: kickstart simulation
-    env.run(until=1)
 
-    while running:
-        if DEBUG:
-              print("SIMULATION LOOP RUNNING")   # 🔥 ADD HERE
+        global blockchain, validator_network
+        blockchain, validator_network = run_simulation(
+            env,
+            scheduler_with_selector,
+            GWOSelector,
+            num_validators=50,
+            use_ml=True
+        )
 
-        try:
-            env.run(until=env.now + 1)
-            time.sleep(0.1)
-        except:
-            break
+
+        env.run(until=1)
+
+
+    # 🔥 LOOP FOREVER (pause/resume controlled by flag)
+    while True:
+        if running:
+            try:
+                env.run(until=env.now + 1)
+            except:
+                break
+
+
+        time.sleep(0.1)
+
+
+
 
 
 
@@ -78,25 +95,58 @@ def get_state():
 
 
 
+
 @app.route("/start")
 def start():
     global simulation_thread, running
 
-    print("START CALLED")   # 🔥 ADD THIS
+
+    print("START CALLED")
+
 
     if running:
-        print("Already running")
         return "Already running"
+
 
     running = True
     state["running"] = True
 
-    simulation_thread = threading.Thread(target=run_sim)
-    simulation_thread.daemon = True
-    simulation_thread.start()
+
+    # 🔥 ONLY start thread once
+    if simulation_thread is None:
+        simulation_thread = threading.Thread(target=run_sim)
+        simulation_thread.daemon = True
+        simulation_thread.start()
+
 
     return "Started"
 
+
+
+@app.route("/reset")
+def reset():
+    global env, blockchain, validator_network, simulation_thread, running
+
+
+    running = False
+
+
+    env = None
+    blockchain = None
+    validator_network = None
+    simulation_thread = None
+
+
+    reset_metrics()
+
+
+    # 🔥 FULL SAFE RESET
+    new_state = get_initial_state()
+    state.clear()
+    state.update(new_state)
+
+
+    return "Reset"
 
 
 @app.route("/stop")

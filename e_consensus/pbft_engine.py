@@ -78,6 +78,11 @@ class PBFTConsensus:
             for v in committee
         )
         
+        #last pbft fix 
+        if total_weight==0:
+            return False
+        
+        
         approved = sum(1 for v in votes if v > 0)
         rejected = len(votes) - approved
 

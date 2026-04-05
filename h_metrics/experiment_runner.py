@@ -66,12 +66,12 @@ def run_strategy(label, scheduler_func, selector_class,use_ml=True):
             "strategy": label,
             "run": i,
             "latency": average_latency(),
-            "throughput": throughput(SIM_TIME),
+            "throughput": throughput(env.now),
             "fairness": fairness_index(validator_network.get_validators())
         })
 
         latencies.append(average_latency())
-        throughputs.append(throughput(SIM_TIME))
+        throughputs.append(throughput(env.now))
         fairnesses.append(
             fairness_index(validator_network.get_validators())
         )
