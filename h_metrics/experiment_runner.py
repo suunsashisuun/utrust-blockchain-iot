@@ -38,7 +38,7 @@ RUNS = 5
 # -----------------------------
 # RUN ONE STRATEGY
 # -----------------------------
-def run_strategy(label, scheduler_func, selector_class):
+def run_strategy(label, scheduler_func, selector_class,use_ml=True):
 
     latencies = []
     throughputs = []
@@ -56,7 +56,8 @@ def run_strategy(label, scheduler_func, selector_class):
             env,
             scheduler_func,
             selector_class,
-            num_validators=50
+            num_validators=50,
+            use_ml=use_ml
         )
 
         env.run(until=SIM_TIME)
@@ -88,7 +89,8 @@ def run_all():
     results.append(run_strategy("Trust", baseline_scheduler, TrustSelector))
 
     # 🔥 YOUR MODEL
-    results.append(run_strategy("UTrust", scheduler_with_selector, GWOSelector))
+    results.append(run_strategy("NoUrgency", scheduler_with_selector, GWOSelector, use_ml=False))
+    results.append(run_strategy("UTrust+ML", scheduler_with_selector, GWOSelector, use_ml=True))
 
     df = pd.DataFrame(results)
 

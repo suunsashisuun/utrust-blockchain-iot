@@ -48,7 +48,7 @@ def create_sensors():
 # ---------------------------
 # IOT GENERATOR
 # ---------------------------
-def iot_generator(env, sensors, classifier, urgent_queue, normal_queue):
+def iot_generator(env, sensors, classifier, urgent_queue, normal_queue,use_ml):
 
     while True:
 
@@ -56,10 +56,15 @@ def iot_generator(env, sensors, classifier, urgent_queue, normal_queue):
            
            sensor_values = sensor.generate_reading()
            
-           urgency = classifier.classify(sensor.device_id, sensor_values)
-           #print("Urgency:", urgency)
+           if use_ml:
+               urgency = classifier.classify(sensor.device_id, sensor_values)
 
-           # OPTIONAL: derive a scalar for logging
+           else:
+               urgency = "NORMAL"
+
+           #print("Urgency:", urgency)
+           
+           # # OPTIONAL: derive a scalar for logging
            gas = sum(sensor_values) / len(sensor_values)
 
 
@@ -88,7 +93,9 @@ def run_simulation(
     env,
     scheduler_func,
     selector_class,
-    num_validators=50
+    num_validators=50,
+    use_ml=True
+
 ):
 
     sensors = create_sensors()
@@ -113,7 +120,8 @@ def run_simulation(
             sensors,
             classifier,
             urgent_queue,
-            normal_queue
+            normal_queue,
+            use_ml
         )
     )
 
