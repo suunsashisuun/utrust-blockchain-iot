@@ -33,6 +33,7 @@ from h_metrics.metrics import (
 
 SIM_TIME = 100
 RUNS = 5
+all_runs = []
 
 
 # -----------------------------
@@ -61,6 +62,13 @@ def run_strategy(label, scheduler_func, selector_class,use_ml=True):
         )
 
         env.run(until=SIM_TIME)
+        all_runs.append({
+            "strategy": label,
+            "run": i,
+            "latency": average_latency(),
+            "throughput": throughput(SIM_TIME),
+            "fairness": fairness_index(validator_network.get_validators())
+        })
 
         latencies.append(average_latency())
         throughputs.append(throughput(SIM_TIME))
@@ -72,8 +80,16 @@ def run_strategy(label, scheduler_func, selector_class,use_ml=True):
         "strategy": label,
         "latency": round(sum(latencies) / RUNS, 4),
         "throughput": round(sum(throughputs) / RUNS, 4),
-        "fairness": round(sum(fairnesses) / RUNS, 4)
+        "fairness": round(sum(fairnesses) / RUNS, 4),
+
+            # 🔥 ADD THESE
+        "latency_std": round(pd.Series(latencies).std(), 4),
+        "throughput_std": round(pd.Series(throughputs).std(), 4),
+        "fairness_std": round(pd.Series(fairnesses).std(), 4),
+
+
     }
+
 
 
 # -----------------------------
@@ -94,7 +110,11 @@ def run_all():
 
     df = pd.DataFrame(results)
 
+    pd.DataFrame(all_runs).to_csv("detailed_runs.csv", index=False)
+
     df.to_csv("final_results.csv", index=False)
+
+    
 
     print("\n===== FINAL RESULTS =====")
     print(df)

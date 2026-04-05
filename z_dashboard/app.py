@@ -113,8 +113,38 @@ def stop():
 @app.route("/comparison")
 def get_comparison():
     df = pd.read_csv("final_results.csv")
-    return df.to_json(orient="records")
 
+    # -----------------------------
+    # HANDLE mean/std format safely
+    # -----------------------------
+    def get_val(row, key):
+        if key + "_mean" in df.columns:
+            return row[key + "_mean"]
+        return row[key]
+
+    try:
+        baseline = df[df["strategy"] == "Random"].iloc[0]
+        utrust = df[df["strategy"].str.contains("UTrust")].iloc[0]
+
+        improvement = {
+            "fairness_gain": round(
+                get_val(utrust, "fairness") - get_val(baseline, "fairness"), 4
+            ),
+            "latency_diff": round(
+                get_val(utrust, "latency") - get_val(baseline, "latency"), 4
+            )
+        }
+
+    except Exception as e:
+        improvement = {
+            "fairness_gain": 0,
+            "latency_diff": 0
+        }
+
+    return {
+        "data": df.to_dict(orient="records"),
+        "insight": improvement
+    }
 
 # ---------------------------
 # MAIN

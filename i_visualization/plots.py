@@ -4,7 +4,7 @@ import os
 
 
 # -----------------------------
-# PATH SETUP (FINAL)
+# PATH SETUP
 # -----------------------------
 base_path = os.path.dirname(os.path.abspath(__file__))
 root_path = os.path.abspath(os.path.join(base_path, ".."))
@@ -31,6 +31,20 @@ scalability = pd.read_csv(scalability_path)
 
 
 # -----------------------------
+# HANDLE COLUMN FORMAT (mean/std or single)
+# -----------------------------
+def get_col(df, base):
+    if base + "_mean" in df.columns:
+        return df[base + "_mean"], df.get(base + "_std", None)
+    return df[base], None
+
+
+latency_vals, latency_std = get_col(results, "latency")
+throughput_vals, throughput_std = get_col(results, "throughput")
+fairness_vals, fairness_std = get_col(results, "fairness")
+
+
+# -----------------------------
 # LABEL FUNCTION
 # -----------------------------
 def add_labels(values):
@@ -39,21 +53,44 @@ def add_labels(values):
 
 
 # -----------------------------
-# COLOR SCHEME (FINAL)
+# COLOR SCHEME
 # -----------------------------
-colors = ['#7f8c8d', '#7f8c8d', '#7f8c8d', '#2ecc71']  # UTrust highlighted
+colors = ['#7f8c8d'] * len(results)
+
+# highlight UTrust
+for i, s in enumerate(results["strategy"]):
+    if "UTrust" in s:
+        colors[i] = "#2ecc71"
+
+
+# -----------------------------
+# IMPROVEMENT CALCULATION
+# -----------------------------
+try:
+    baseline = results[results["strategy"] == "Random"].iloc[0]
+    utrust = results[results["strategy"].str.contains("UTrust")].iloc[0]
+
+    fairness_improve = ((utrust["fairness"] - baseline["fairness"]) / baseline["fairness"]) * 100
+    latency_change = ((utrust["latency"] - baseline["latency"]) / baseline["latency"]) * 100
+
+    print("\n===== KEY INSIGHTS =====")
+    print(f"Fairness Improvement: {fairness_improve:.2f}%")
+    print(f"Latency Change: {latency_change:.2f}%")
+
+except:
+    print("\n[Warning] Could not compute improvement (check strategy names)")
 
 
 # -----------------------------
 # LATENCY
 # -----------------------------
 plt.figure()
-plt.bar(results["strategy"], results["latency"], color=colors)
-plt.title("Latency Comparison (UTrust Achieves Lower Latency)")
+plt.bar(results["strategy"], latency_vals, yerr=latency_std, capsize=5, color=colors)
+plt.title("Latency Comparison")
 plt.xlabel("Strategy")
 plt.ylabel("Latency")
 plt.grid(axis='y', linestyle='--', alpha=0.6)
-add_labels(results["latency"])
+add_labels(latency_vals)
 plt.tight_layout()
 plt.savefig(os.path.join(base_path, "latency_comparison.png"))
 
@@ -62,12 +99,12 @@ plt.savefig(os.path.join(base_path, "latency_comparison.png"))
 # THROUGHPUT
 # -----------------------------
 plt.figure()
-plt.bar(results["strategy"], results["throughput"], color=colors)
-plt.title("Throughput Comparison (UTrust Improves Throughput)")
+plt.bar(results["strategy"], throughput_vals, yerr=throughput_std, capsize=5, color=colors)
+plt.title("Throughput Comparison")
 plt.xlabel("Strategy")
 plt.ylabel("Throughput")
 plt.grid(axis='y', linestyle='--', alpha=0.6)
-add_labels(results["throughput"])
+add_labels(throughput_vals)
 plt.tight_layout()
 plt.savefig(os.path.join(base_path, "throughput_comparison.png"))
 
@@ -76,12 +113,12 @@ plt.savefig(os.path.join(base_path, "throughput_comparison.png"))
 # FAIRNESS
 # -----------------------------
 plt.figure()
-plt.bar(results["strategy"], results["fairness"], color=colors)
-plt.title("Fairness Comparison (Trade-off in UTrust)")
+plt.bar(results["strategy"], fairness_vals, yerr=fairness_std, capsize=5, color=colors)
+plt.title("Fairness Comparison")
 plt.xlabel("Strategy")
 plt.ylabel("Fairness Index")
 plt.grid(axis='y', linestyle='--', alpha=0.6)
-add_labels(results["fairness"])
+add_labels(fairness_vals)
 plt.tight_layout()
 plt.savefig(os.path.join(base_path, "fairness_comparison.png"))
 

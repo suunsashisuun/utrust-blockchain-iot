@@ -334,9 +334,25 @@ async function loadComparison() {
     try {
         const res = await fetch('/comparison');
         if (!res.ok) throw new Error();
+        const response = await res.json();
 
-        comparisonData = await res.json();
+        comparisonData = response.data;        // 🔥 FIX
+        const insight = response.insight;      // 🔥 NEW
+
+        // OPTIONAL: show numeric improvement
+        const insightBox = document.getElementById("comparisonInsight");
+
+        if (insightBox && insight) {
+            insightBox.innerHTML += `
+                <br><br>
+                📊 Fairness Gain: ${insight.fairness_gain.toFixed(3)}  
+                <br>
+                ⏱ Latency Change: ${insight.latency_diff.toFixed(3)}
+            `;
+        }
+
         updateComparison('fairness');
+
 
     } catch {
         console.warn("Comparison data not loaded");
@@ -351,7 +367,14 @@ function updateComparison(metric) {
     if (!comparisonData.length) return;
 
     const labels = comparisonData.map(d => d.strategy);
-    const values = comparisonData.map(d => d[metric]);
+    const values = comparisonData.map(d => {
+        if (d[metric + "_mean"] !== undefined) {
+            return d[metric + "_mean"];   // 🔥 use mean if exists
+        }
+        return d[metric];
+    });
+
+
 
     if (!values.length) return;
 
