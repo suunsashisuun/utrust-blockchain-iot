@@ -1,25 +1,27 @@
+import joblib
+import warnings
+from sklearn.exceptions import InconsistentVersionWarning
+
+warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
+
 class UrgencyClassifier:
 
     def __init__(self):
         self.previous_values = {}
 
-    def classify(self, device_id, gas_value):
+        self.model = joblib.load("b_processing/urgency_model.pkl")
+        self.scaler = joblib.load("b_processing/scaler.pkl")
 
-        previous = self.previous_values.get(device_id, gas_value)
-        change = gas_value - previous
+    def classify(self, device_id, sensor_values):
 
-        self.previous_values[device_id] = gas_value
+        # 🔥 SCALE FIRST (MANDATORY)
+        scaled_input = self.scaler.transform([sensor_values])
 
-        # 🔥 PRIORITY ORDER (important)
+        urgency = self.model.predict(scaled_input)[0]
 
-        # CRITICAL
-        if gas_value >= 80 or change >= 25:
+        if urgency == 2:
             return "CRITICAL"
-
-        # WARNING
-        elif gas_value >= 60 or change >= 15:
+        elif urgency == 1:
             return "WARNING"
-
-        # NORMAL
         else:
             return "NORMAL"

@@ -1,7 +1,12 @@
+import numpy as np
 import random
+import joblib
+import warnings
+from sklearn.exceptions import InconsistentVersionWarning
 
-MIN_GAS = 10
-MAX_GAS = 100
+warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
+
+NUM_FEATURES = 128
 
 
 class GasSensorModel:
@@ -9,26 +14,53 @@ class GasSensorModel:
     def __init__(self, device_id, base_level, risk_factor):
         self.device_id = device_id
         self.base_level = base_level
-        self.current_value = base_level
         self.risk_factor = risk_factor
+
+        # 🔥 Load real dataset stats
+        self.feature_means = joblib.load("b_processing/feature_means.pkl")
+        self.feature_stds = joblib.load("b_processing/feature_stds.pkl")
+
+        # Initialize correctly
+        self.current_values = np.random.normal(
+            self.feature_means,
+            self.feature_stds
+        )
 
     def generate_reading(self):
 
-        # normal fluctuation
-        fluctuation = random.randint(-2, 2)
-        self.current_value += fluctuation
+        # ---------------------------
+        # BASE REALISTIC SAMPLE
+        # ---------------------------
+        self.current_values = np.random.normal(
+            self.feature_means,
+            self.feature_stds
+        )
 
-        # 🔥 controlled spike (more predictable urgency)
+        # ---------------------------
+        # CONTROLLED RISK LEVEL
+        # ---------------------------
+        mode = random.random()
+
+        if mode < 0.4:
+            multiplier = 0.4   # NORMAL
+        elif mode < 0.75:
+            multiplier = 1.0   # WARNING
+        else:
+            multiplier = 2.0   # CRITICAL
+
+        self.current_values *= multiplier
+
+        # ---------------------------
+        # SMALL NOISE
+        # ---------------------------
+        noise = np.random.normal(0, self.feature_stds * 0.05)
+        self.current_values += noise
+
+        # ---------------------------
+        # OPTIONAL EXTRA SPIKE
+        # ---------------------------
         if random.random() < self.risk_factor:
-            spike = random.randint(35, 60)
-            self.current_value += spike
+            spike = np.random.normal(0, self.feature_stds * 0.3)
+            self.current_values += spike
 
-        # recovery
-        if self.current_value > self.base_level + 5:
-            self.current_value -= random.randint(3, 7)
-
-        # clamp range
-        self.current_value = max(MIN_GAS, min(self.current_value, MAX_GAS))
-
-        return self.current_value
-
+        return self.current_values

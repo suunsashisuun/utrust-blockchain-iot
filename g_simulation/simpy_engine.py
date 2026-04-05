@@ -53,23 +53,29 @@ def iot_generator(env, sensors, classifier, urgent_queue, normal_queue):
     while True:
 
         for sensor in sensors:
+           
+           sensor_values = sensor.generate_reading()
+           
+           urgency = classifier.classify(sensor.device_id, sensor_values)
+           #print("Urgency:", urgency)
 
-            gas = sensor.generate_reading()
-
-            urgency = classifier.classify(sensor.device_id, gas)
-
-
-            event = build_transaction(
-                sensor.device_id,
-                gas,
-                urgency,
-                env.now
-            )
+           # OPTIONAL: derive a scalar for logging
+           gas = sum(sensor_values) / len(sensor_values)
 
 
-            if urgency in ["CRITICAL", "WARNING"]:
+           event = build_transaction(
+                    sensor.device_id,
+                    gas,
+                    urgency,
+                    env.now
+                )
+           
+
+           if urgency == "CRITICAL":    
+        
                 yield urgent_queue.put(event)
-            else:
+            
+           else:
                 yield normal_queue.put(event)
 
         yield env.timeout(1)

@@ -30,42 +30,6 @@ from h_metrics.metrics import (
     reset_metrics
 )
 
-def run_strategy(label, scheduler_func, selector_class):
-
-    latencies = []
-    throughputs = []
-    fairnesses = []
-
-    for i in range(RUNS):
-
-        random.seed(i)   # ✅ CORRECT PLACE
-
-        env = simpy.Environment()
-
-        reset_metrics()
-
-        blockchain, validator_network = run_simulation(
-            env,
-            scheduler_func,
-            selector_class,
-            num_validators=50
-        )
-
-        env.run(until=SIM_TIME)
-
-        latencies.append(average_latency())
-        throughputs.append(throughput(SIM_TIME))
-        fairnesses.append(
-            fairness_index(validator_network.get_validators())
-        )
-
-    return {
-        "strategy": label,
-        "latency": round(sum(latencies) / RUNS, 4),
-        "throughput": round(sum(throughputs) / RUNS, 4),
-        "fairness": round(sum(fairnesses) / RUNS, 4)
-    }
-
 
 SIM_TIME = 100
 RUNS = 5
