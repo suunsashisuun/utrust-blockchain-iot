@@ -77,6 +77,15 @@ class PBFTConsensus:
             trust_scores.get(v.validator_id, 0.5)
             for v in committee
         )
+        
+        approved = sum(1 for v in votes if v > 0)
+        rejected = len(votes) - approved
+
+        from z_dashboard.state import state
+        state["consensus_info"] = {
+            "approved": approved,
+            "rejected": rejected
+        }
 
         # ---------------------------
         # DYNAMIC THRESHOLD

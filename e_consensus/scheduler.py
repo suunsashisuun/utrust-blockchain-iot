@@ -114,6 +114,12 @@ def scheduler_with_selector(
             urgency_weight
         )
 
+        state["validator_decision"] = {
+            "selected": selected_validator,
+            "reason": "High trust & low load"
+        }
+
+
         state["selected_validator"] = selected_validator
         if DEBUG:
             print("SELECTED VALIDATOR:", selected_validator)   # 🔥 DEBUG
@@ -140,6 +146,19 @@ def scheduler_with_selector(
         state["consensus_result"] = consensus_success
         if DEBUG:
             print("CONSENSUS RESULT:", consensus_success)   # 🔥 DEBUG
+
+        trace_entry = {
+            "device": event["device_id"],
+            "gas": event["gas"],
+            "urgency": event["urgency"],
+            "validator": selected_validator,
+            "result": consensus_success
+        }
+
+        state["event_trace"].append(trace_entry)
+
+        # keep only last 5
+        state["event_trace"] = state["event_trace"][-5:]
 
 
         # ---------------------------

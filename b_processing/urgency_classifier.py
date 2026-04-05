@@ -25,3 +25,21 @@ class UrgencyClassifier:
             return "WARNING"
         else:
             return "NORMAL"
+        
+    def classify_with_confidence(self, device_id, sensor_values):
+
+        scaled_input = self.scaler.transform([sensor_values])
+
+        pred = self.model.predict(scaled_input)[0]
+        probs = self.model.predict_proba(scaled_input)[0]
+
+        confidence = float(max(probs))
+
+        if pred == 2:
+            urgency = "CRITICAL"
+        elif pred == 1:
+            urgency = "WARNING"
+        else:
+            urgency = "NORMAL"
+
+        return urgency, confidence

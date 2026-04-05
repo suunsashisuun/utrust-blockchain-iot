@@ -34,7 +34,17 @@ state = {
     "latency_history": [0.0],
 
     # validator load
-    "validator_loads": {}
+    "validator_loads": {},
+
+    
+    "event_trace": [],
+
+    # 🔥 NEW
+    "last_classification": {},
+    "validator_decision": {},
+    "consensus_info": {},
+
 }
 
 state["running"] = False
+

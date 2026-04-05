@@ -89,6 +89,18 @@ async function fetchState() {
             }
         }
 
+        const traceBox = document.getElementById("eventTrace");
+
+        if (data.event_trace) {
+            traceBox.innerHTML = data.event_trace.map(e => `
+                <div style="margin-bottom:6px;">
+                    📡 D${e.device} → ${e.urgency} → ${e.validator} → 
+                    <span style="color:${e.result ? 'green' : 'red'};">
+                        ${e.result ? '✔' : '✖'}
+                    </span>
+                </div>
+            `).join("");
+        }
 
         // PERFORMANCE
         document.getElementById("latency").innerText = (data.latency || 0).toFixed(4);
@@ -268,6 +280,34 @@ async function fetchState() {
             sensorChart.update();
         }
 
+        if (data.last_classification) {
+            const c = data.last_classification;
+
+            document.getElementById("classificationLogic").innerHTML = `
+                Gas: ${c.gas.toFixed(2)}<br>
+                Prediction: <b>${c.result}</b><br>
+                Confidence: ${(c.confidence * 100).toFixed(1)}%
+            `;
+        }
+
+
+        if (data.consensus_info) {
+            const c = data.consensus_info;
+
+            document.getElementById("consensusBox").innerHTML = `
+                ✔ ${c.approved} approved<br>
+                ✖ ${c.rejected} rejected
+            `;
+        }
+
+        if (data.validator_decision) {
+            const v = data.validator_decision;
+
+            document.getElementById("validatorDecision").innerHTML = `
+                Selected: <b>${v.selected}</b><br>
+                Reason: ${v.reason}
+            `;
+        }
 
 
         // PIPELINE STATUS

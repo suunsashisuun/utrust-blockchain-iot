@@ -61,8 +61,19 @@ def iot_generator(env, sensors, classifier, urgent_queue, normal_queue,use_ml):
                       
            sensor_values = sensor.generate_reading()
            
+       #    if use_ml:
+        #       urgency = classifier.classify(sensor.device_id, sensor_values)
            if use_ml:
-               urgency = classifier.classify(sensor.device_id, sensor_values)
+                urgency, confidence = classifier.classify_with_confidence(
+                    sensor.device_id,
+                    sensor_values
+                )
+
+                state["last_classification"] = {
+                    "gas": sum(sensor_values) / len(sensor_values),
+                    "result": urgency,
+                    "confidence":round(confidence,3)
+                }
 
            else:
                urgency = "NORMAL"
