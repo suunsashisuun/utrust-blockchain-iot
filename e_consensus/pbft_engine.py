@@ -1,100 +1,134 @@
 import random
 
 
+
+
 class PBFTConsensus:
+    """
+    Practical Byzantine Fault Tolerance (PBFT) inspired consensus.
+
+
+    Features:
+    - Trust-weighted voting
+    - Dynamic committee selection
+    - Soft Byzantine filtering
+    """
+
 
     def __init__(self, committee_size=5):
         self.committee_size = committee_size
 
+
     def run_consensus(self, proposer_id, consensus_group, trust_scores):
 
+
         # ---------------------------
-        # BASIC CHECK
+        # BASIC VALIDATION
         # ---------------------------
         if len(consensus_group) <= 1:
             return False
 
+
         # ---------------------------
-        # FORM COMMITTEE (EXCLUDE PROPOSER)
+        # FORM COMMITTEE (exclude proposer)
         # ---------------------------
         committee_pool = [
-            v for v in consensus_group
-            if v.validator_id != proposer_id
+            validator for validator in consensus_group
+            if validator.validator_id != proposer_id
         ]
+
 
         if len(committee_pool) == 0:
             return False
+
 
         committee = random.sample(
             committee_pool,
             min(self.committee_size, len(committee_pool))
         )
 
+
         # ---------------------------
         # TRUST-AWARE VOTING
         # ---------------------------
         votes = []
 
+
         for validator in committee:
 
-            vid = validator.validator_id
 
-            trust = trust_scores.get(vid, 0.5)
+            validator_id = validator.validator_id
+
+
+            trust = trust_scores.get(validator_id, 0.5)
             proposer_trust = trust_scores.get(proposer_id, 0.5)
 
+
             # ---------------------------
-            # VOTE PROBABILITY (BALANCED)
+            # VOTE PROBABILITY
             # ---------------------------
             vote_probability = (
                 0.7 * trust +
                 0.3 * proposer_trust
             )
 
+
             vote_probability = min(1.0, vote_probability + 0.05)
 
+
             # ---------------------------
-            # BYZANTINE FILTER (SOFT)
+            # BYZANTINE FILTER
             # ---------------------------
             if trust < 0.2:
                 vote = False
             else:
                 vote = random.random() < vote_probability
 
+
             # ---------------------------
-            # WEIGHTED VOTE (KEY CHANGE)
+            # WEIGHTED VOTING
             # ---------------------------
             if vote:
-                votes.append(trust)   # weighted contribution
+                votes.append(trust)
             else:
                 votes.append(0)
 
+
         # ---------------------------
-        # TRUST-WEIGHTED DECISION
+        # AGGREGATE RESULTS
         # ---------------------------
         positive_weight = sum(votes)
 
+
         total_weight = sum(
-            trust_scores.get(v.validator_id, 0.5)
-            for v in committee
+            trust_scores.get(validator.validator_id, 0.5)
+            for validator in committee
         )
-        
-        #last pbft fix 
-        if total_weight==0:
+
+
+        # 🔥 CRITICAL FIX (you added this correctly)
+        if total_weight == 0:
             return False
-        
-        
-        approved = sum(1 for v in votes if v > 0)
+
+
+        approved = sum(1 for vote in votes if vote > 0)
         rejected = len(votes) - approved
 
+
+        # ---------------------------
+        # UPDATE DASHBOARD STATE
+        # ---------------------------
         from z_dashboard.state import state
         state["consensus_info"] = {
             "approved": approved,
             "rejected": rejected
         }
 
+
         # ---------------------------
         # DYNAMIC THRESHOLD
         # ---------------------------
         threshold = 0.6 * total_weight
+
 
         return positive_weight >= threshold

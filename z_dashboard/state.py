@@ -1,94 +1,90 @@
-
-
-
-
-state = {
-    # IoT
-    "last_events": [],
-    "processed_urgent": 0,
-    "processed_normal": 0,
-    "last_processed_event": None,
-    # queues
-    "urgent_queue_size": 0,
-    "normal_queue_size": 0,
-
-    # consensus
-    "domain_size": 0,
-    "selected_validator": "N/A",   # 🔥 FIXED
-    "consensus_result": False,     # 🔥 FIXED
-
-    # trust
-    "trust_scores": {},
-
-    # blockchain
-    "blocks": 0,
-
-    # metrics
-    "latency": 0.0,
-    "throughput": 0.0,
-    "fairness": 0.0,
-
-    # time-series tracking
-    "fairness_history": [0.0],     # 🔥 better init
-    "latency_history": [0.0],
-
-    # validator load
-    "validator_loads": {},
-
-    
-    "event_trace": [],
-
-    # 🔥 NEW
-    "last_classification": {},
-    "validator_decision": {},
-    "consensus_info": {},
-
-}
+# ---------------------------
+# INITIAL STATE TEMPLATE
+# (Single Source of Truth)
+# ---------------------------
 def get_initial_state():
     return {
+        # ---------------------------
+        # IoT
+        # ---------------------------
         "last_events": [],
         "processed_urgent": 0,
         "processed_normal": 0,
         "last_processed_event": None,
 
 
+        # ---------------------------
+        # QUEUES
+        # ---------------------------
         "urgent_queue_size": 0,
         "normal_queue_size": 0,
 
 
+        # ---------------------------
+        # CONSENSUS
+        # ---------------------------
         "domain_size": 0,
         "selected_validator": "N/A",
         "consensus_result": False,
 
 
+        # ---------------------------
+        # TRUST
+        # ---------------------------
         "trust_scores": {},
 
 
+        # ---------------------------
+        # BLOCKCHAIN
+        # ---------------------------
         "blocks": 0,
 
 
+        # ---------------------------
+        # METRICS
+        # ---------------------------
         "latency": 0.0,
         "throughput": 0.0,
         "fairness": 0.0,
 
 
+        # ---------------------------
+        # HISTORY TRACKING
+        # ---------------------------
         "fairness_history": [0.0],
         "latency_history": [0.0],
 
 
+        # ---------------------------
+        # VALIDATOR LOAD
+        # ---------------------------
         "validator_loads": {},
 
 
+        # ---------------------------
+        # TRACE
+        # ---------------------------
         "event_trace": [],
 
 
+        # ---------------------------
+        # DASHBOARD DETAILS
+        # ---------------------------
         "last_classification": {},
         "validator_decision": {},
         "consensus_info": {},
 
 
+        # ---------------------------
+        # SYSTEM STATE
+        # ---------------------------
         "running": False
     }
 
-state["running"] = False
 
+
+
+# ---------------------------
+# GLOBAL STATE (INITIALIZED ONCE)
+# ---------------------------
+state = get_initial_state()

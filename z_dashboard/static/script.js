@@ -336,10 +336,9 @@ async function loadComparison() {
         if (!res.ok) throw new Error();
         const response = await res.json();
 
-        comparisonData = response.data;        // 🔥 FIX
-        const insight = response.insight;      // 🔥 NEW
+        comparisonData = response.data;        
+        const insight = response.insight;      
 
-        // OPTIONAL: show numeric improvement
         const insightBox = document.getElementById("comparisonInsight");
 
         if (insightBox && insight) {

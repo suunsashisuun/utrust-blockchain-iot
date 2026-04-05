@@ -1,13 +1,21 @@
-
 from e_consensus.domain_selector import DomainSelector
 from e_consensus.pbft_engine import PBFTConsensus
 from h_metrics.metrics import average_latency, throughput, fairness_index
 from z_dashboard.state import state
 
-from config import DEMO_MODE, DEMO_SEED,DEBUG,DEBUG_IMPORTANT
+
+from config import DEMO_MODE, DEMO_SEED, DEBUG, DEBUG_IMPORTANT
 
 
-
+# ---------------------------
+# MAIN SCHEDULER WITH SELECTOR
+# Handles:
+# - Queue prioritization
+# - Domain selection (GT-BFT)
+# - GWO proposer selection
+# - PBFT consensus
+# - Metrics + state updates
+# ---------------------------
 
 def scheduler_with_selector(
     env,
@@ -21,65 +29,94 @@ def scheduler_with_selector(
 ):
 
 
+    # ---------------------------
+    # INITIALIZE COMPONENTS
+    # ---------------------------
     domain_selector = DomainSelector(alpha=0.3)
     pbft = PBFTConsensus(committee_size=5)
 
 
     while True:
+
+
+        # ---------------------------
+        # DEBUG ENTRY
+        # ---------------------------
         if DEBUG_IMPORTANT:
             print("SCHEDULER STATE ID:", id(state))
-            print("Scheduler LOOP RUNNING")   # 🔥 ADD HERE
+            print("Scheduler LOOP RUNNING")
 
 
-      # ---------------------------
-        # PRIORITY QUEUE (FINAL FIX)
+        # ---------------------------
+        # PRIORITY QUEUE HANDLING
         # ---------------------------
         if urgent_queue.items:
             event = yield urgent_queue.get()
+
+
             if DEBUG_IMPORTANT:
                 print("🚨 URGENT EVENT PICKED:", event)
+
+
             state["processed_urgent"] += 1
+
 
         elif normal_queue.items:
             event = yield normal_queue.get()
+
+
             if DEBUG_IMPORTANT:
                 print("📦 NORMAL EVENT PICKED:", event)
+
+
             state["processed_normal"] += 1
 
+
         else:
+            # No events → wait briefly
             yield env.timeout(0.05)
             continue
 
 
-        # UPDATE QUEUE STATE AFTER PICK
+        # ---------------------------
+        # UPDATE QUEUE STATE
+        # ---------------------------
         state["urgent_queue_size"] = len(urgent_queue.items)
         state["normal_queue_size"] = len(normal_queue.items)
+
 
         if DEBUG_IMPORTANT:
             print("QUEUE SIZES:", state["urgent_queue_size"], state["normal_queue_size"])
 
 
+        # ---------------------------
+        # EXTRACT EVENT DATA
+        # ---------------------------
         device = event["device_id"]
         gas = event["gas"]
         urgency = event["urgency"]
+
+
         state["last_processed_event"] = event
 
+
         # ---------------------------
-        # FLUCTUATE NETWORK
+        # NETWORK FLUCTUATION
+        # Simulates real-world instability
         # ---------------------------
-        for v in validator_network.get_validators():
-            v.fluctuate()
+        for validator in validator_network.get_validators():
+            validator.fluctuate()
 
 
         # ---------------------------
-        # UPDATE TRUST (GLOBAL)
+        # TRUST UPDATE
         # ---------------------------
         trust_manager.update_all_trust(validator_network)
         trust_scores = trust_manager.get_trust_scores()
-        #TESTING print("Trust:", trust_scores) #DELETE
+
 
         # ---------------------------
-        # URGENCY → NUMERIC
+        # URGENCY → NUMERIC WEIGHT
         # ---------------------------
         if urgency == "CRITICAL":
             urgency_weight = 1.0
@@ -90,7 +127,7 @@ def scheduler_with_selector(
 
 
         # ---------------------------
-        # CONSENSUS DOMAIN (GT-BFT)
+        # DOMAIN SELECTION (GT-BFT)
         # ---------------------------
         validators = validator_network.get_validators()
 
@@ -100,21 +137,26 @@ def scheduler_with_selector(
             trust_scores
         )
 
+
         state["domain_size"] = len(consensus_group)
 
+
         if DEBUG:
-            print("DOMAIN SIZE:", state["domain_size"])   # 🔥 DEBUG
+            print("DOMAIN SIZE:", state["domain_size"])
+
 
         state["trust_scores"] = trust_scores
 
+
         # ---------------------------
-        # GWO SELECTOR (PROPOSER)
+        # GWO VALIDATOR SELECTION
         # ---------------------------
         selected_validator = selector.select_validator(
-            consensus_group,   # 🔥 IMPORTANT: domain only
+            consensus_group,
             trust_scores,
             urgency_weight
         )
+
 
         state["validator_decision"] = {
             "selected": selected_validator,
@@ -123,32 +165,41 @@ def scheduler_with_selector(
 
 
         state["selected_validator"] = selected_validator
+
+
         if DEBUG:
-            print("SELECTED VALIDATOR:", selected_validator)   # 🔥 DEBUG
+            print("SELECTED VALIDATOR:", selected_validator)
+
 
         validator_obj = validator_network.get_validator_by_id(selected_validator)
 
 
         # ---------------------------
-        # START TIMING (FULL PIPELINE)
+        # START TIMING
         # ---------------------------
         start_time = env.now
 
 
         # ---------------------------
-        # PBFT CONSENSUS (VALIDATE PROPOSER)
+        # PBFT CONSENSUS
         # ---------------------------
         consensus_success = pbft.run_consensus(
-            selected_validator,   # 🔥 FIXED
+            selected_validator,
             consensus_group,
             trust_scores
         )
 
 
         state["consensus_result"] = consensus_success
-        if DEBUG:
-            print("CONSENSUS RESULT:", consensus_success)   # 🔥 DEBUG
 
+
+        if DEBUG:
+            print("CONSENSUS RESULT:", consensus_success)
+
+
+        # ---------------------------
+        # TRACE LOG (LAST 5 EVENTS)
+        # ---------------------------
         trace_entry = {
             "device": event["device_id"],
             "gas": event["gas"],
@@ -157,9 +208,8 @@ def scheduler_with_selector(
             "result": consensus_success
         }
 
-        state["event_trace"].append(trace_entry)
 
-        # keep only last 5
+        state["event_trace"].append(trace_entry)
         state["event_trace"] = state["event_trace"][-5:]
 
 
@@ -172,26 +222,25 @@ def scheduler_with_selector(
             validator_obj.process_transaction(success=True)
 
 
+            # Simulate processing delay
             yield env.timeout(validator_obj.latency)
 
 
-            # reduce load after execution
-           # validator_obj.decay_load() #instant decay isnt accumulating load
-           
+            # Add block
+            new_block = blockchain.add_transaction(
+                selected_validator,
+                event,
+                consensus_success
+            )
 
-
-            new_block = blockchain.add_transaction(selected_validator, event, consensus_success)
 
             if new_block:
                 state["blocks"] = max(0, len(blockchain.chain) - 1)
 
 
-
         else:
-            # failed consensus
+            # Failed consensus path
             validator_obj.process_transaction(success=False)
-
-
             yield env.timeout(0.05)
 
 
@@ -207,27 +256,46 @@ def scheduler_with_selector(
         # ---------------------------
         record_transaction(delay)
 
-        #update metrics first 
 
         state["latency"] = average_latency()
         state["throughput"] = throughput(env.now)
-        state["fairness"] = fairness_index(validator_network.get_validators())
+        state["fairness"] = fairness_index(
+            validator_network.get_validators()
+        )
+
 
         if DEBUG:
-            print("METRICS:", state["latency"], state["throughput"], state["fairness"])  # 🔥 DEBUG
+            print(
+                "METRICS:",
+                state["latency"],
+                state["throughput"],
+                state["fairness"]
+            )
 
-        #then store history
 
-        state["fairness_history"] = state["fairness_history"][-50:] + [state["fairness"]]
-        state["latency_history"] = state["latency_history"][-50:] + [state["latency"]]
-        
+        # ---------------------------
+        # STORE HISTORY
+        # ---------------------------
+        state["fairness_history"] = (
+            state["fairness_history"][-50:] + [state["fairness"]]
+        )
+
+
+        state["latency_history"] = (
+            state["latency_history"][-50:] + [state["latency"]]
+        )
+
+
+        # ---------------------------
+        # VALIDATOR LOAD TRACKING
+        # ---------------------------
         state["validator_loads"] = {
-            v.validator_id: v.processed_transactions
-            for v in validator_network.get_validators()
+            validator.validator_id: validator.processed_transactions
+            for validator in validator_network.get_validators()
         }
 
+
         # ---------------------------
-        # TRUST UPDATE (CRITICAL)
+        # OPTIONAL TRUST UPDATE (DISABLED)
         # ---------------------------
-       # trust_manager.update_trust(selected_validator, consensus_success)
- 
+        # trust_manager.update_trust(selected_validator, consensus_success)
