@@ -51,7 +51,7 @@ from h_metrics.metrics import (
 # CONFIG
 # -----------------------------
 SIM_TIME = 100
-RUNS = 5
+RUNS = 20
 
 
 # Stores per-run results

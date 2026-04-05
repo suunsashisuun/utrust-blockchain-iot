@@ -14,7 +14,6 @@ scalability_path = os.path.join(root_path, "scalability_results.csv")
 
 detailed_path = os.path.join(root_path, "detailed_runs.csv")
 
-
 # -----------------------------
 # SAFETY CHECK
 # -----------------------------
@@ -29,6 +28,8 @@ if not os.path.exists(detailed_path):
     detailed_available = False
 else:
     detailed_available = True
+
+detailed = pd.read_csv(detailed_path)
 
 # -----------------------------
 # LOAD DATA
@@ -194,6 +195,126 @@ if detailed_available:
     plt.tight_layout()
     plt.savefig(os.path.join(base_path, "detailed_runs_combined.png"))
 
+
+
+# -----------------------------
+# BOX PLOTS (STABILITY)
+# -----------------------------
+for metric in ["latency", "throughput", "fairness"]:
+    plt.figure()
+
+    detailed.boxplot(column=metric, by="strategy")
+
+    plt.title(f"{metric.capitalize()} Distribution (Box Plot)")
+    plt.suptitle("")  # removes default pandas title
+    plt.xlabel("Strategy")
+    plt.ylabel(metric.capitalize())
+
+    plt.grid(axis='y', linestyle='--', alpha=0.6)
+    plt.tight_layout()
+
+    plt.savefig(os.path.join(base_path, f"{metric}_boxplot.png"))
+
+
+
+# -----------------------------
+# VIOLIN PLOTS (DISTRIBUTION SHAPE)
+# -----------------------------
+import seaborn as sns
+
+for metric in ["latency", "throughput", "fairness"]:
+    plt.figure()
+
+    sns.violinplot(x="strategy", y=metric, data=detailed)
+
+    plt.title(f"{metric.capitalize()} Distribution (Violin Plot)")
+    plt.xlabel("Strategy")
+    plt.ylabel(metric.capitalize())
+
+    plt.grid(axis='y', linestyle='--', alpha=0.6)
+    plt.tight_layout()
+
+    plt.savefig(os.path.join(base_path, f"{metric}_violin.png"))
+
+
+
+# -----------------------------
+# ERROR BAR PLOT (MEAN ± STD)
+# -----------------------------
+grouped = detailed.groupby("strategy").agg({
+    "latency": ["mean", "std"],
+    "throughput": ["mean", "std"],
+    "fairness": ["mean", "std"]
+})
+
+grouped.columns = ["_".join(col) for col in grouped.columns]
+grouped = grouped.reset_index()
+
+for metric in ["latency", "throughput", "fairness"]:
+    plt.figure()
+
+    means = grouped[f"{metric}_mean"]
+    stds = grouped[f"{metric}_std"]
+
+    plt.errorbar(
+        grouped["strategy"],
+        means,
+        yerr=stds,
+        fmt='o',
+        capsize=5
+    )
+
+    plt.title(f"{metric.capitalize()} (Mean ± Std)")
+    plt.xlabel("Strategy")
+    plt.ylabel(metric.capitalize())
+
+    plt.grid(axis='y', linestyle='--', alpha=0.6)
+    plt.tight_layout()
+
+    plt.savefig(os.path.join(base_path, f"{metric}_errorbar.png"))
+
+
+
+# -----------------------------
+# RUN-WISE CONSISTENCY PLOTS
+# -----------------------------
+for metric in ["latency", "throughput", "fairness"]:
+    plt.figure()
+
+    for strategy in detailed["strategy"].unique():
+        subset = detailed[detailed["strategy"] == strategy]
+
+        plt.plot(
+            subset["run"],
+            subset[metric],
+            marker='o',
+            label=strategy
+        )
+
+    plt.title(f"{metric.capitalize()} Across Runs")
+    plt.xlabel("Run ID")
+    plt.ylabel(metric.capitalize())
+    plt.legend()
+
+    plt.grid(linestyle='--', alpha=0.6)
+    plt.tight_layout()
+
+    plt.savefig(os.path.join(base_path, f"{metric}_runs.png"))
+
+
+# -----------------------------
+# CORRELATION HEATMAP
+# -----------------------------
+plt.figure()
+
+corr = detailed[["latency", "throughput", "fairness"]].corr()
+
+sns.heatmap(corr, annot=True, cmap="coolwarm")
+
+plt.title("Metric Correlation")
+plt.tight_layout()
+
+plt.savefig(os.path.join(base_path, "correlation_heatmap.png"))
 
 
 # -----------------------------
