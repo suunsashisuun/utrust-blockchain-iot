@@ -3,7 +3,7 @@ import random
 
 class GWOSelector:
 
-    def __init__(self, iterations=10):
+    def __init__(self, iterations=20):
         self.iterations = iterations
 
     def fitness(self, validator, trust_scores, urgency_weight):
@@ -13,14 +13,20 @@ class GWOSelector:
         latency_score = 1 - validator.latency
         energy_score = 1 - validator.energy
 
+        # 🔥 STRONG load penalty
+        load_penalty = validator.current_load
+
         fitness = (
-            0.5 * trust
+            0.3 * trust
             + 0.25 * latency_score
             + 0.15 * energy_score
-            + 0.10 * urgency_weight
+            + 0.1 * urgency_weight
+            - 0.4 * (load_penalty / 10)   # 🔥 stronger impact
         )
 
         return fitness
+
+
 
 
     def select_validator(self, validators, trust_scores, urgency_weight):
@@ -28,7 +34,9 @@ class GWOSelector:
         peers = validators
 
         # initialize wolves randomly
-        num_wolves = max(5, len(peers) * 2)
+        num_wolves = min(10, len(peers))
+
+       # num_wolves = max(5, len(peers) * 2)
         wolves = [random.choice(peers) for _ in range(num_wolves)]
 
         for t in range(self.iterations):
@@ -77,11 +85,9 @@ class GWOSelector:
                 X3 = Xd - A3 * D_delta
 
                 # adaptive exploration
-                exploration_strength = 0.1 * (1 - t / self.iterations)
-                exploration = random.uniform(-exploration_strength, exploration_strength)
+                new_position = (X1 + X2 + X3) / 3
 
-                new_position = (X1 + X2 + X3) / 3 + exploration
-                new_position = max(0, min(1, new_position))
+                
 
                 # map to closest validator using fitness space
                 closest_validator = min(
@@ -109,6 +115,4 @@ class GWOSelector:
         validators = [v for v, f in top_candidates]
         weights = [f for v, f in top_candidates]
 
-        selected = random.choices(validators, weights=weights, k=1)[0]
-
-        return selected.validator_id
+        return final_fitness[0][0].validator_id
