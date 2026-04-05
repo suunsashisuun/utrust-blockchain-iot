@@ -1,5 +1,5 @@
 strategy,latency,throughput,fairness
-Random,0.362,2.762,0.8646
-RoundRobin,0.3909,2.548,0.9956
-Trust,0.444,2.976,0.0204
-GWO,0.5733,1.746,0.1982
+Random,0.3219,3.114,0.8641
+RoundRobin,0.3237,3.084,0.9963
+Trust,0.2926,4.222,0.02
+UTrust,0.1893,5.29,0.6818
