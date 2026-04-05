@@ -1,7 +1,6 @@
 
 
-DEBUG = False          # general logs OFF
-DEBUG_IMPORTANT = False # only critical logs ON
+
 
 state = {
     # IoT

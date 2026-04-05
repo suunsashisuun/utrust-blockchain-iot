@@ -12,6 +12,8 @@ root_path = os.path.abspath(os.path.join(base_path, ".."))
 results_path = os.path.join(root_path, "final_results.csv")
 scalability_path = os.path.join(root_path, "scalability_results.csv")
 
+detailed_path = os.path.join(root_path, "detailed_runs.csv")
+
 
 # -----------------------------
 # SAFETY CHECK
@@ -22,6 +24,11 @@ if not os.path.exists(results_path):
 if not os.path.exists(scalability_path):
     raise FileNotFoundError(f"Missing file: {scalability_path}")
 
+if not os.path.exists(detailed_path):
+    print("[Warning] detailed_runs.csv not found — skipping detailed plots")
+    detailed_available = False
+else:
+    detailed_available = True
 
 # -----------------------------
 # LOAD DATA
@@ -74,7 +81,7 @@ try:
     latency_change = ((utrust["latency"] - baseline["latency"]) / baseline["latency"]) * 100
 
     print("\n===== KEY INSIGHTS =====")
-    print(f"Fairness Improvement: {fairness_improve:.2f}%")
+    print(f"Fairness Change: {fairness_improve:.2f}%")
     print(f"Latency Change: {latency_change:.2f}%")
 
 except:
@@ -147,6 +154,46 @@ plt.ylabel("Average Latency")
 plt.grid(linestyle='--', alpha=0.6)
 plt.tight_layout()
 plt.savefig(os.path.join(base_path, "scalability_plot.png"))
+
+
+
+# -----------------------------
+# DETAILED RUN ANALYSIS (NEW)
+# -----------------------------
+if detailed_available:
+
+    detailed = pd.read_csv(detailed_path)
+    strategies = detailed["strategy"].unique()
+
+    fig, axes = plt.subplots(3, 1, figsize=(8, 12), sharex=True)
+    metrics = ["latency", "throughput", "fairness"]
+
+    for i, metric in enumerate(metrics):
+        ax = axes[i]
+
+        for strategy in strategies:
+            subset = detailed[detailed["strategy"] == strategy].sort_values("run")
+
+            ax.plot(
+                subset["run"],
+                subset[metric],
+                marker='o',
+                label=strategy
+            )
+
+        ax.set_ylabel(metric.capitalize())
+        ax.set_title(f"{metric.capitalize()} across runs")
+        ax.grid()
+
+    axes[-1].set_xlabel("Run")
+
+    # single legend
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc='upper center', ncol=3)
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(base_path, "detailed_runs_combined.png"))
+
 
 
 # -----------------------------

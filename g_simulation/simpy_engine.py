@@ -21,7 +21,9 @@ from h_metrics.metrics import record_transaction
 
 from z_dashboard.state import state
 
-from z_dashboard.state import DEBUG_IMPORTANT
+
+from config import DEMO_MODE, DEMO_SEED,DEBUG,DEBUG_IMPORTANT
+
 
 
 # ---------------------------

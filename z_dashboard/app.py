@@ -3,9 +3,8 @@ import threading
 import simpy
 import pandas as pd
 import time
-
+import random
 from z_dashboard.state import state
-from z_dashboard.state import DEBUG
 from z_dashboard.state import get_initial_state
 
 
@@ -20,6 +19,8 @@ from e_consensus.scheduler import scheduler_with_selector
 from e_consensus.gwo_selector import GWOSelector
 # metrics
 from h_metrics.metrics import reset_metrics
+from config import DEMO_MODE, DEMO_SEED,DEBUG,DEBUG_IMPORTANT,NUM_VALIDATORS
+
 
 
 app = Flask(__name__)
@@ -39,6 +40,9 @@ validator_network = None
 def run_sim():
     global running, env
 
+    
+    if DEMO_MODE:
+        random.seed(DEMO_SEED)
 
     # 🔥 create simulation ONLY ONCE
     if env is None:
@@ -50,7 +54,7 @@ def run_sim():
             env,
             scheduler_with_selector,
             GWOSelector,
-            num_validators=50,
+            num_validators=NUM_VALIDATORS,
             use_ml=True
         )
 
