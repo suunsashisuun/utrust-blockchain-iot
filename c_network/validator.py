@@ -1,8 +1,5 @@
 import random
 
-
-
-
 class Validator:
     """
     Represents a validator node in the network.
@@ -20,7 +17,6 @@ class Validator:
 
 
         self.validator_id = validator_id
-
 
         # ---------------------------
         # CORE PROPERTIES
@@ -41,6 +37,11 @@ class Validator:
         # DYNAMIC LOAD
         # ---------------------------
         self.current_load = 0
+
+        # ---------------------------
+        # BYZANTINE BEHAVIOR FLAG
+        # ---------------------------
+        self.is_malicious = (random.random() < 0.1)
 
 
     # ---------------------------

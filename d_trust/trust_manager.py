@@ -80,6 +80,13 @@ class TrustManager:
         # ---------------------------
         consistency = max(0, 1 - abs(validator.current_load - 5) / 10)
 
+        # ---------------------------
+        # FAILURE PENALTY
+        # ---------------------------
+        failure_rate = validator.failed_transactions / max(1, validator.processed_transactions)
+        penalty_fail = 0.3 * failure_rate
+
+
 
         # ---------------------------
         # BASE TRUST CALCULATION
@@ -119,7 +126,8 @@ class TrustManager:
         # ---------------------------
         # FINAL TRUST VALUE
         # ---------------------------
-        trust = base_trust + recovery - penalty
+        trust = base_trust + recovery - penalty - penalty_fail
+
 
 
         return max(self.min_trust, min(self.max_trust, trust))
