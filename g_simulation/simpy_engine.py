@@ -19,6 +19,11 @@ from e_consensus.gwo_selector import GWOSelector
 
 from h_metrics.metrics import record_transaction
 
+from z_dashboard.state import state
+
+from z_dashboard.state import DEBUG_IMPORTANT
+
+
 # ---------------------------
 # LOAD DECAY PROCESS (GLOBAL)
 # ---------------------------
@@ -53,7 +58,7 @@ def iot_generator(env, sensors, classifier, urgent_queue, normal_queue,use_ml):
     while True:
 
         for sensor in sensors:
-           
+                      
            sensor_values = sensor.generate_reading()
            
            if use_ml:
@@ -74,14 +79,30 @@ def iot_generator(env, sensors, classifier, urgent_queue, normal_queue,use_ml):
                     urgency,
                     env.now
                 )
+           state["last_events"] = state["last_events"][-20:] + [event]
            
+           
+           if DEBUG_IMPORTANT:
+               print("EVENT BEFORE QUEUE:", event)
+               print("TYPE OF URGENCY:", type(event["urgency"]))
 
-           if urgency == "CRITICAL":    
-        
+           # 🔥 NORMALIZE URGENCY FIRST
+           urgency = str(event["urgency"]).strip().upper()
+
+           if DEBUG_IMPORTANT:
+               print("RAW EVENT:", event)
+               print("FINAL URGENCY USED:", urgency)
+
+           if urgency == "CRITICAL":
+                if DEBUG_IMPORTANT:
+                    print("➡️ SENT TO URGENT QUEUE")
                 yield urgent_queue.put(event)
-            
            else:
+                if DEBUG_IMPORTANT:
+                    print("➡️ SENT TO NORMAL QUEUE")
                 yield normal_queue.put(event)
+
+
 
         yield env.timeout(1)
 

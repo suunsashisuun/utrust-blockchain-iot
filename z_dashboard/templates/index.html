@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>UTrust Dashboard</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    margin: 0;
+    padding: 20px;
+    background: linear-gradient(135deg, #eef2f7, #ffffff);
+    color: #1f2937;
+}
+
+/* HEADER */
+h1 {
+    margin-bottom: 10px;
+    color: #111827;
+}
+
+/* KPI STRIP */
+.kpi-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.kpi {
+    flex: 1;
+    min-width: 150px;
+    padding: 12px;
+    border-radius: 12px;
+
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(8px);
+
+    border: 1px solid rgba(0,0,0,0.05);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+
+    text-align: center;
+}
+
+.kpi-value {
+    font-size: 20px;
+    font-weight: bold;
+    color: #2563eb;
+}
+
+/* BUTTONS */
+button {
+    padding: 8px 16px;
+    margin-right: 10px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+
+    background: #2563eb;
+    color: white;
+
+    transition: 0.2s ease;
+}
+
+button:hover {
+    background: #1d4ed8;
+}
+
+/* GRID */
+.container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+/* CARD */
+.card {
+    padding: 15px;
+    border-radius: 14px;
+
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(10px);
+
+    border: 1px solid rgba(0,0,0,0.06);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+
+    transition: transform 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+}
+
+h2 {
+    margin-top: 0;
+    font-size: 16px;
+    color: #111827;
+}
+
+/* PIPELINE */
+.pipeline {
+    font-size: 14px;
+    line-height: 1.8;
+}
+
+/* CANVAS */
+canvas {
+    width: 100% !important;
+    height: 260px !important;
+}
+
+/* SMALL TEXT */
+small {
+    color: #6b7280;
+}
+</style>
+
+
+</head>
+
+<body>
+
+<h1>UTrust System Dashboard</h1>
+
+<!-- CONTROLS -->
+<div style="margin-bottom: 15px;">
+    <button onclick="startSim()">Start</button>
+    <button onclick="stopSim()">Stop</button>
+</div>
+
+<!-- KPI STRIP -->
+<div class="kpi-container">
+    <div class="kpi">
+        <div>Latency</div>
+        <div id="latency" class="kpi-value"></div>
+    </div>
+    <div class="kpi">
+        <div>Throughput</div>
+        <div id="throughput" class="kpi-value"></div>
+    </div>
+    <div class="kpi">
+        <div>Fairness</div>
+        <div id="fairness" class="kpi-value"></div>
+    </div>
+    <div class="kpi">
+        <div>Blocks</div>
+        <div id="blocks" class="kpi-value"></div>
+    </div>
+</div>
+
+<div class="container">
+
+    <div class="card">
+        <h2>Pipeline Flow</h2>
+        <div id="pipelineStatus" class="pipeline"></div>
+    </div>
+
+    <div class="card">
+        <h2>Queues</h2>
+
+        <h4>📥 Current</h4>
+        <p>Urgent: <span id="urgent"></span></p>
+        <p>Normal: <span id="normal"></span></p>
+
+        <h4>📤 Processed</h4>
+        <p>Urgent: <span id="processedUrgent"></span></p>
+        <p>Normal: <span id="processedNormal"></span></p>
+
+        <h4>⚡ Last Processed</h4>
+        <div id="lastEventBox" style="padding:8px; border-radius:8px; background:#f3f4f6;"></div>
+    </div>
+
+
+    <div class="card">
+        <h2>Trust Distribution</h2>
+        <canvas id="trustChart"></canvas>
+    </div>
+
+    <div class="card">
+        <h2>Fairness Trend</h2>
+        <canvas id="fairnessChart"></canvas>
+    </div>
+
+    <div class="card">
+        <h2>Validator Load</h2>
+        <canvas id="loadChart"></canvas>
+    </div>
+
+    <div class="card">
+        <h2>Strategy Comparison</h2>
+
+        <div style="margin-bottom:10px;">
+            <button onclick="updateComparison('latency')">Latency</button>
+            <button onclick="updateComparison('throughput')">Throughput</button>
+            <button onclick="updateComparison('fairness')">Fairness</button>
+        </div>
+
+        <canvas id="comparisonChart"></canvas>
+    </div>
+
+</div>
+
+<script src="/static/script.js"></script>
+
+</body>
+</html>
