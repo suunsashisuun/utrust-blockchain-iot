@@ -1,9 +1,17 @@
 from flask import Flask, jsonify, render_template
+
 import threading
 import simpy
 import pandas as pd
 import time
 import random
+
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 
 from z_dashboard.state import state
@@ -93,6 +101,7 @@ def run_sim():
         # Warm start (avoids blank dashboard)
         env.run(until=1)
 
+    logging.info("SIMULATION LOOP RUNNING")
 
     # ---------------------------
     # CONTINUOUS LOOP
@@ -103,6 +112,7 @@ def run_sim():
                 env.run(until=env.now + 1)
             except Exception as e:
                 print("Simulation stopped due to error:", e)
+                logging.error(f"Simulation error: {e}")
                 break
 
 
@@ -129,7 +139,7 @@ def get_state():
     if DEBUG:
         print("APP STATE ID:", id(state))
         print("STATE", state)
-
+    
 
     return jsonify(state)
 
@@ -145,7 +155,7 @@ def start():
 
 
     print("START CALLED")
-
+    logging.info("START CALLED")
 
     if running:
         return "Already running"
@@ -180,7 +190,7 @@ def stop():
 
 
     print("STOP CALLED")
-
+    logging.info("STOP CALLED")
 
     return "Stopped"
 
