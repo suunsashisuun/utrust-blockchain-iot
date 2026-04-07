@@ -350,7 +350,7 @@ async function loadComparison() {
             `;
         }
 
-        updateComparison('fairness');
+        updateComparison('validators_used');
 
 
     } catch {
@@ -365,57 +365,114 @@ function updateComparison(metric) {
 
     if (!comparisonData.length) return;
 
-    const labels = comparisonData.map(d => d.strategy);
-    const values = comparisonData.map(d => {
+    // -----------------------------
+    // SORT BASED ON METRIC
+    // -----------------------------
+    let sorted = [...comparisonData];
+
+    if (metric === "latency" || metric === "validators_used") {
+        sorted.sort((a, b) => a[metric] - b[metric]); // lower is better
+    } else {
+        sorted.sort((a, b) => b[metric] - a[metric]); // higher is better
+    }
+
+    // -----------------------------
+    // KEEP TOP 5
+    // -----------------------------
+    let filtered = sorted.slice(0, 5);
+
+    // 🔥 ALWAYS INCLUDE UTrust
+    const utrust = comparisonData.find(d => d.strategy.includes("UTrust"));
+
+    if (utrust && !filtered.some(d => d.strategy === utrust.strategy)) {
+        filtered.pop();
+        filtered.push(utrust);
+    }
+
+    // -----------------------------
+    // EXTRACT DATA
+    // -----------------------------
+    const labels = filtered.map(d => d.strategy);
+    const values = filtered.map(d => {
         if (d[metric + "_mean"] !== undefined) {
-            return d[metric + "_mean"];   // 🔥 use mean if exists
+            return d[metric + "_mean"];
         }
         return d[metric];
     });
 
-
-
     if (!values.length) return;
 
-    let bestIndex, worstIndex;
+    // -----------------------------
+    // BEST / WORST
+    // -----------------------------
+    const minVal = Math.min(...values);
+    const maxVal = Math.max(...values);
 
-    if (metric === "latency") {
-        bestIndex = values.indexOf(Math.min(...values));
-        worstIndex = values.indexOf(Math.max(...values));
-    } else {
-        bestIndex = values.indexOf(Math.max(...values));
-        worstIndex = values.indexOf(Math.min(...values));
-    }
+    // Determine best/worst based on metric type
+    const isLowerBetter = (metric === "latency" || metric === "validators_used");
 
-    const best = labels[bestIndex];
-    const worst = labels[worstIndex];
+    const bestIndices = values
+        .map((v, i) => (isLowerBetter ? v === minVal : v === maxVal) ? i : -1)
+        .filter(i => i !== -1);
 
-    // COLOR LOGIC (clean + meaningful)
-    const colors = labels.map((_, i) => {
-        if (i === bestIndex) return "#22c55e";   // best → green
-        if (i === worstIndex) return "#ef4444";  // worst → red
-        return "#9ca3af";                        // neutral
-    });
+    const worstIndices = values
+        .map((v, i) => (isLowerBetter ? v === maxVal : v === minVal) ? i : -1)
+        .filter(i => i !== -1);
 
-    // INSIGHT TEXT
-    const insightBox = document.getElementById("comparisonInsight");
+    const best = bestIndices.map(i => labels[i]).join(", ");
+    const worst = worstIndices.map(i => labels[i]).join(", ");
 
+
+    // -----------------------------
+    // COLORS
+    // -----------------------------
+       const colors = labels.map((label, i) => {
+
+            // 🔵 ALWAYS highlight UTrust
+            if (label.includes("UTrust")) {
+                return "#3b82f6";
+            }
+
+            // 🟢 ALL best (handles ties)
+            if (bestIndices.includes(i)) {
+                return "#22c55e";
+            }
+
+            // 🔴 ALL worst (handles ties)
+            if (worstIndices.includes(i)) {
+                return "#ef4444";
+            }
+
+            return "#9ca3af";
+        });
+
+
+
+    // -----------------------------
+    // INSIGHT MESSAGE
+    // -----------------------------
     let message = "";
-
     if (metric === "latency") {
-        message = `⚡ ${best} minimizes delay, ${worst} is slowest`;
+        message = `⚡ ${best} minimize delay, ${worst} are slowest`;
     }
     else if (metric === "throughput") {
-        message = `🚀 ${best} handles highest load, ${worst} is weakest`;
+        message = `🚀 ${best} achieve highest throughput, ${worst} are weakest`;
+    }
+    else if (metric === "validators_used") {
+        message = `💸 ${best} use least validators (efficient), ${worst} use most`;
     }
     else {
-        message = `⚖️ ${best} is most fair, ${worst} is most biased and U Trust has a balanced trade off `;
+        message = `⚖️ ${best} achieve best fairness, ${worst} show imbalance`;
     }
 
-    if (insightBox) {
-        insightBox.innerHTML = message;
-    }
 
+
+    const insightBox = document.getElementById("comparisonInsight");
+    if (insightBox) insightBox.innerHTML = message;
+
+    // -----------------------------
+    // CHART
+    // -----------------------------
     const ctx = document.getElementById("comparisonChart").getContext("2d");
 
     if (!comparisonChart) {
@@ -424,29 +481,36 @@ function updateComparison(metric) {
             data: {
                 labels: labels,
                 datasets: [{
-                    label: metric.toUpperCase() + " (Best & Worst Highlighted)",
+                    label: metric.toUpperCase(),
                     data: values,
                     backgroundColor: colors
                 }]
             },
             options: {
-                animation: {
-                    duration: 900,
-                    easing: 'easeOutQuart'
-                },
                 responsive: true,
-                maintainAspectRatio: false
+                maintainAspectRatio: false,
+                animation: {
+                    duration: 800
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            autoSkip: false,
+                            maxRotation: 25,
+                            minRotation: 15
+                        }
+                    }
+                }
             }
         });
     } else {
         comparisonChart.data.labels = labels;
         comparisonChart.data.datasets[0].data = values;
-        comparisonChart.data.datasets[0].label =
-            metric.toUpperCase() + " (Best & Worst Highlighted)";
         comparisonChart.data.datasets[0].backgroundColor = colors;
-        comparisonChart.update('active');
+        comparisonChart.update();
     }
 }
+
 
 
 // -----------------------------

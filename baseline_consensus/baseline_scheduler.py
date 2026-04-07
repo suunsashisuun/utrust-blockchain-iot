@@ -1,3 +1,5 @@
+BASELINE_MODE = "default"
+
 def baseline_scheduler(
     env,
     urgent_queue,
@@ -5,8 +7,9 @@ def baseline_scheduler(
     selector,
     validator_network,
     blockchain,
-    record_transaction
+    record_transaction,
 ):
+    mode = BASELINE_MODE
 
     while True:
 
@@ -21,10 +24,37 @@ def baseline_scheduler(
         validators = validator_network.get_validators()
 
         # ---------------------------
-        # SELECT VALIDATOR (BASELINE)
+        # BASELINE MODES
         # ---------------------------
-        selected_validator = selector.select_validator(validators)
 
+        # 🔴 FULL participation BASELINE (ALL VALIDATORS)
+        if mode == "full_part":
+            selected_validator = selector.select_validator(validators)
+            active_validators = len(validators)   # 🔥 KEY METRIC
+
+        # 🟡 Aggressive Trust Selection BASELINE (TOP-K)
+        elif mode == "agg_trust":
+
+            # sort by trust-like proxy (low load + low latency)
+            sorted_validators = sorted(
+                validators,
+                key=lambda v: (v.current_load, v.latency)
+            )
+
+            top_k = max(3, int(len(validators) * 0.3))  # 30%
+            selected_pool = sorted_validators[:top_k]
+
+            selected_validator = selector.select_validator(selected_pool)
+            active_validators = len(selected_pool)
+
+        # 🔵 DEFAULT BASELINES (your original ones)
+        else:
+            selected_validator = selector.select_validator(validators)
+            active_validators = len(validators)
+
+        # ---------------------------
+        # FETCH VALIDATOR
+        # ---------------------------
         validator_obj = validator_network.get_validator_by_id(selected_validator)
 
         # ---------------------------
@@ -47,3 +77,10 @@ def baseline_scheduler(
         # METRICS
         # ---------------------------
         record_transaction(delay)
+
+        # 🔥 NEW: TRACK VALIDATOR USAGE
+        try:
+            from h_metrics.metrics import record_validator_usage
+            record_validator_usage(active_validators)
+        except:
+            pass

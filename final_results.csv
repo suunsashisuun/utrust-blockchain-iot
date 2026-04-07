@@ -1,6 +1,8 @@
-strategy,latency,throughput,fairness,latency_std,throughput_std,fairness_std
-Random,0.2981,3.3467,0.7659,0.0168,0.1901,0.0662
-RoundRobin,0.3045,3.28,0.9855,0.0229,0.2506,0.0074
-Trust,0.358,3.6067,0.02,0.178,2.4908,0.0
-NoUrgency,0.1557,6.4867,0.662,0.0219,0.9642,0.0964
-UTrust+ML,0.1361,7.5533,0.611,0.0524,2.392,0.0899
+strategy,latency,throughput,fairness,validators_used,latency_std,throughput_std,fairness_std
+FullParticipation,0.2981,3.3467,0.7659,50.0,0.0168,0.1901,0.0662
+GreedyTrust,0.1211,8.2533,0.0793,15.0,0.0043,0.2887,0.0005
+Random,0.2981,3.3467,0.7659,50.0,0.0168,0.1901,0.0662
+RoundRobin,0.3045,3.28,0.9855,50.0,0.0229,0.2506,0.0074
+BalancedTrust,0.1702,5.8733,0.2891,50.0,0.0098,0.3402,0.0017
+NoUrgency,0.1557,6.4867,0.662,15.0,0.0219,0.9642,0.0964
+UTrust+ML,0.1302,7.6133,0.6384,15.0,0.0459,2.1092,0.0285

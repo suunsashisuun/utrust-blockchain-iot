@@ -2,6 +2,7 @@ from e_consensus.domain_selector import DomainSelector
 from e_consensus.pbft_engine import PBFTConsensus
 from h_metrics.metrics import average_latency, throughput, fairness_index
 from z_dashboard.state import state
+from h_metrics.metrics import record_validator_usage
 
 
 from config import DEMO_MODE, DEMO_SEED, DEBUG, DEBUG_IMPORTANT
@@ -136,9 +137,21 @@ def scheduler_with_selector(
             validators,
             trust_scores
         )
+        # ---------------------------
+        # ACTIVE VALIDATOR COUNT (NEW METRIC)
+        # ---------------------------
+        
+        active_validators = len(consensus_group)
+
+        # dashboard
+        state["active_validators"] = active_validators  #selected subset
+
+        # 🔥 CRITICAL: record for experiments
+        record_validator_usage(active_validators)
 
 
-        state["domain_size"] = len(consensus_group)
+
+        state["domain_size"] = len(consensus_group)  #total network
 
 
         if DEBUG:

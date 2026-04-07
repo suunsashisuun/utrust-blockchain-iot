@@ -257,9 +257,15 @@ small {
                 <button onclick="updateComparison('latency')">Latency</button>
                 <button onclick="updateComparison('throughput')">Throughput</button>
                 <button onclick="updateComparison('fairness')">Fairness</button>
+                <button onclick="updateComparison('validators_used')">Cost</button>
+
             </div>
 
             <canvas id="comparisonChart"></canvas>
+            <small style="color:#6b7280;">
+                    Showing top strategies for clarity
+            </small>
+
 
             <div id="comparisonInsight" style="
                 margin-top:10px;
