@@ -150,7 +150,7 @@ class TrustManager:
             # Prevents sudden fluctuations
             # ---------------------------
             old_trust = self.trust_scores[validator.validator_id]
-            smoothed_trust = 0.7 * old_trust + 0.3 * new_trust
+            smoothed_trust = 0.85 * old_trust + 0.15 * new_trust
 
 
             self.trust_scores[validator.validator_id] = smoothed_trust

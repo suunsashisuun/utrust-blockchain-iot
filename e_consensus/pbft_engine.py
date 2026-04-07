@@ -11,7 +11,7 @@ class PBFTConsensus:
     - Soft Byzantine filtering
     """
 
-    def __init__(self, committee_size=5):
+    def __init__(self, committee_size=7):
         self.committee_size = committee_size
 
     def run_consensus(self, proposer_id, consensus_group, trust_scores):

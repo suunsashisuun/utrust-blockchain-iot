@@ -6,7 +6,7 @@ let sensorChart;
 
 
 let comparisonData = [];
-
+let comparisonLoaded = false;
 
 // -----------------------------
 // ANIMATION STYLE (PIPELINE)
@@ -456,16 +456,15 @@ setInterval(fetchState, 1000);
 
 
 // -----------------------------
-// INIT
-// -----------------------------
-loadComparison();
-
-
-// -----------------------------
 // CONTROL
 // -----------------------------
 function startSim() {
     fetch('/start');
+     if (!comparisonLoaded) {
+        loadComparison();
+        comparisonLoaded = true;
+    }
+
 }
 
 function stopSim() {
@@ -478,6 +477,7 @@ function resetSim() {
     fetch('/reset')
         .then(() => {
             location.reload();   // 🔥 ensures clean UI reset
+            
         });
 }
 

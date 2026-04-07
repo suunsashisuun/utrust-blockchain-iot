@@ -33,7 +33,7 @@ def scheduler_with_selector(
     # INITIALIZE COMPONENTS
     # ---------------------------
     domain_selector = DomainSelector(alpha=0.3)
-    pbft = PBFTConsensus(committee_size=5)
+    pbft = PBFTConsensus(committee_size=7)
 
 
     while True:

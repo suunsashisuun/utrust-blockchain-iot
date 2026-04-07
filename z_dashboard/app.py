@@ -206,7 +206,7 @@ def reset():
 
 
     print("RESET CALLED")
-
+    logging.info("RESET CALLED")
 
     # Stop simulation
     running = False

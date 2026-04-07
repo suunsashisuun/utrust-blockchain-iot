@@ -151,7 +151,7 @@ class GWOSelector:
                 # ---------------------------
                 # EXPLORATION NOISE
                 # ---------------------------
-                exploration = random.uniform(-0.05, 0.05)
+                exploration = random.uniform(-0.02, 0.02)
 
 
                 new_position = (X1 + X2 + X3) / 3 + exploration

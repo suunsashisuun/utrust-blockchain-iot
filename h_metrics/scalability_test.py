@@ -21,9 +21,8 @@ from h_metrics.metrics import (
     reset_metrics
 )
 
+from config import RUNS, SIM_TIME
 
-SIM_TIME = 100
-RUNS = 5
 
 
 # ---------------------------
